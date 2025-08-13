@@ -26,8 +26,25 @@ except IndexError:
 api_url = f"https://gw.tldv.io/v1/meetings/{meeting_id}/watch-page?noTranscript=true"
 print(f"Making request to: {api_url}")
 
-response = requests.get(api_url)
+# Initialize headers
+headers = {}
 
+# Make initial request
+response = requests.get(api_url, headers=headers)
+
+# Check if we get a 403 Forbidden error
+if response.status_code == 403:
+    print("Access forbidden (403). Authentication token required.")
+    token = input("Please enter your authentication token: ")
+
+    # Add token to headers (assuming Bearer token format)
+    headers['Authorization'] = f'Bearer {token}'
+
+    # Retry the request with the token
+    print("Retrying request with authentication token...")
+    response = requests.get(api_url, headers=headers)
+
+# Check the final response status
 if response.status_code == 200:
     data = response.json()
     print("Response JSON data:",
@@ -58,6 +75,9 @@ if response.status_code == 200:
             print("Failed to convert the video.")
     else:
         print("'video' key not found in the response JSON.")
+elif response.status_code == 403:
+    print("Access still forbidden after providing token. Please check if your token is valid.")
+    print(f"Response content: {response.content}")
 else:
     print(f"Failed to get the meeting information. Status code: {response.status_code}")
     print(f"Response content: {response.content}")
